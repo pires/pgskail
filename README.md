@@ -5,9 +5,9 @@ PostgreSQL high-availability made easy.
 
 `pgskail` aims at making it easier to horizontally scale PostgreSQL by automating:
 
-* Failover - in case of failure, perform leader election and redirect living replicas to point to new leader
-* Horizontal scaling - add/remove replicas when needed
-* Monitoring - constantly gather and store metrics that will tell us how our cluster is doing in real-time, while at the same time allow to determine if we need/can scale up/down
+* [Failover](https://github.com/pires/pgskail/wiki/Failover) - in case of failure, perform leader election and redirect living replicas to point to new leader
+* Horizontal Scaling - add/remove replicas when needed
+* [Monitoring](https://github.com/pires/pgskail/wiki/Monitoring) - constantly gather and store metrics that will tell us how our cluster is doing in real-time, while at the same time allow to determine if we need/can scale up/down
 
 ## Disclaimer
 
