@@ -1,0 +1,75 @@
+{
+	"ImportPath": "github.com/GoogleCloudPlatform/kubernetes",
+	"GoVersion": "go1.4.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Comment": "242673bbc820e051ef00033e274d32e08ece9e15",
+			"Rev": "242673bbc820e051ef00033e274d32e08ece9e15"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/etcdserver/etcdhttp/httptypes",
+			"Comment": "v2.0.4-288-g866a9d4",
+			"Rev": "866a9d4e41401657ea44bf539b2c5561d6fdcd67"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/types",
+			"Comment": "v2.0.4-288-g866a9d4",
+			"Rev": "866a9d4e41401657ea44bf539b2c5561d6fdcd67"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-etcd/etcd",
+			"Comment": "v0.4.6-8-g60e12ca",
+			"Rev": "60e12cac3db8ffce00b576b4af0e7b0a968f1003"
+		},
+		{
+			"ImportPath": "github.com/daviddengcn/go-colortext",
+			"Rev": "b5c0891944c2f150ccc9d02aecf51b76c14c2948"
+		},
+		{
+			"ImportPath": "github.com/emicklei/go-restful",
+			"Comment": "v1.1.3-29-gc68bc68",
+			"Rev": "c68bc68d7689f127ab554a42378aece0ea3df4b3"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "44145f04b68cf362d9c4df2182967c2275eaefed"
+		},
+		{
+			"ImportPath": "github.com/influxdb/influxdb/client",
+			"Comment": "v0.8.8",
+			"Rev": "afde71eb1740fd763ab9450e1f700ba0e53c36d0"
+		},
+		{
+			"ImportPath": "github.com/spf13/cobra",
+			"Rev": "79bd93d369fb73d640179208d4e2b1a748915567"
+		},
+		{
+			"ImportPath": "github.com/spf13/pflag",
+			"Rev": "11b7cf8387a31f278486eaad758162830eca8c73"
+		},
+		{
+			"ImportPath": "github.com/stretchr/objx",
+			"Rev": "d40df0cc104c06eae2dfe03d7dddb83802d52f9a"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/mock",
+			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/require",
+			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "d466437aa4adc35830964cffc5b5f262c63ddcb4"
+		}
+	]
+}
