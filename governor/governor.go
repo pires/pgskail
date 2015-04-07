@@ -1,11 +1,11 @@
 package governor
 
 import (
+	"log"
 	"net"
 	"strconv"
 
 	"github.com/coreos/go-etcd/etcd"
-	"github.com/golang/glog"
 
 	"github.com/pires/pgskail/service"
 	"github.com/pires/pgskail/util"
@@ -32,18 +32,18 @@ func govern() {
 	if leaderResponse, _ := client.Get(KEY_LEADER, false, false); leaderResponse == nil {
 		// no leader. run for it?
 		if options.Electable {
-			glog.Info("No leader was found. Running for leader...")
+			log.Println("No leader was found. Running for leader...")
 			// some competitor may have won already, so fail if it is so
 			if _, err := client.Create(KEY_LEADER, pgServer, options.HealthCheckTTL+5); err == nil {
 				amLeader = true
-				glog.Info("Won leader race")
+				log.Println("Won leader race")
 			} else {
-				glog.Info("Lost leader race")
+				log.Println("Lost leader race")
 				// look again for the leader
 				govern()
 			}
 		} else {
-			glog.Warning("No leader was found. Retrying in", options.HealthCheckTTL)
+			log.Println("No leader was found. Retrying in", options.HealthCheckTTL)
 		}
 	} else {
 		if leader := leaderResponse.Node.Value; leader == pgServer {
@@ -51,52 +51,48 @@ func govern() {
 			// log only if we
 			amPromoted := !amLeader && true
 			if amLeader = true; amPromoted {
-				glog.Info("I'm leader")
+				log.Println("I'm leader")
 			}
 		} else {
 			amLeader = false
-			glog.Info("Leader is", leader)
+			log.Println("Leader is", leader)
 		}
 	}
 }
 
 func Run(_options service.Options) chan struct{} {
-  options = _options
-	defer glog.Flush()
-
-	glog.Info("Running governor")
+	options = _options
+	log.Println("Running governor")
 
 	// validate PostgreSQL
 	if options.PgPort < 1025 || options.PgPort > 65535 {
-		glog.Fatal("Bad --pg_port value: ", options.PgPort)
+		log.Fatal("Bad --pg_port value: ", options.PgPort)
 	}
 	pgServer = options.PgHost + ":" + strconv.Itoa(options.PgPort)
-	glog.Info("Connecting to PostgreSQL at ", pgServer, "...")
+	log.Println("Connecting to PostgreSQL at ", pgServer, "...")
 	if _, err := net.Dial("tcp", pgServer); err != nil {
-		glog.Error("There was an error while connecting to PostgreSQL")
-		glog.Fatal(err)
+		log.Fatal("There was an error while connecting to PostgreSQL -> ", err)
 	}
 
 	// validate Etcd
 	etcdServer := options.EtcdHost + ":2379"
-	glog.Info("Connecting to Etcd at ", etcdServer, "...")
+	log.Println("Connecting to Etcd at ", etcdServer, "...")
 	machines := []string{"http://" + etcdServer}
 	client = etcd.NewClient(machines)
 	if _, err := net.Dial("tcp", etcdServer); err != nil {
-		glog.Error("There was an error while connecting to Etcd")
-		glog.Fatal(err)
+		log.Fatal("There was an error while connecting to Etcd -> ", err)
 	}
 
 	// need to clean-up?
 	if options.CleanKeystore {
-		glog.Info("Cleaning-up keystore...")
+		log.Println("Cleaning-up keystore...")
 		// clean-up directory
 		client.Delete(ETCD_PREFIX, true)
 		// create directory
 		if _, err := client.CreateDir(ETCD_PREFIX, ETCD_TTL_FOREVER); err != nil {
-			glog.Fatal("There was an error while creating", ETCD_PREFIX, " directory in etcd. Code:", getErrorCode(err))
+			log.Fatal("There was an error while creating", ETCD_PREFIX, " directory in etcd. Code:", getErrorCode(err))
 		}
-		glog.Info("Keystore cleaned-up")
+		log.Println("Keystore cleaned-up")
 	}
 
 	// govern once right now

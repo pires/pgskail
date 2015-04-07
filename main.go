@@ -1,14 +1,13 @@
 package main
 
 import (
-	"flag"
+	"log"
 
-	"github.com/golang/glog"
-	
+	flag "github.com/spf13/pflag"
+
 	"github.com/pires/pgskail/governor"
 	"github.com/pires/pgskail/service"
 )
-
 
 var (
 	options = &service.Options{}
@@ -27,13 +26,11 @@ func initializeFlags() {
 
 func main() {
 	initializeFlags()
-	defer glog.Flush()
 
-	glog.Info("pgskail")
+	log.Println("pgskail")
 
 	g := governor.Run(*options)
 	defer close(g)
-	
+
 	select {}
 }
-
