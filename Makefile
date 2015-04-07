@@ -13,18 +13,18 @@
 NAME=pgskail
 VERSION=$(shell cat VERSION)
 
-local: *.go
-	godep go build -ldflags "-X main.Version $(VERSION)-dev" -o build/governor
+local:
+	godep go build -a -tags netgo -installsuffix cgo -ldflags "-w -X main.Version $(VERSION)-dev" -o build/pgskail
 
 release:
 	rm -rf build release && mkdir build release
 	for os in linux freebsd darwin ; do \
-		GOOS=$$os ARCH=amd64 godep go build -ldflags "-X main.Version $(VERSION)" -o build/governor-$$os-amd64 ; \
-		tar --transform 's|^build/||' --transform 's|-.*||' -czvf release/governor-$(VERSION)-$$os-amd64.tar.gz build/governor-$$os-amd64 README.md LICENSE ; \
+		GOOS=$$os ARCH=amd64 godep go build -a -tags netgo -installsuffix cgo -ldflags "-w -X main.Version $(VERSION)" -o build/pgskail-$$os-amd64 ; \
+		tar --transform 's|^build/||' --transform 's|-.*||' -czvf release/pgskail-$(VERSION)-$$os-amd64.tar.gz build/pgskail-$$os-amd64 README.md LICENSE ; \
 	done
-	GOOS=windows ARCH=amd64 godep go build -ldflags "-X main.Version $(VERSION)" -o build/governor-$(VERSION)-windows-amd64.exe
-	zip release/governor-$(VERSION)-windows-amd64.zip build/governor-$(VERSION)-windows-amd64.exe README.md LICENSE && \
-		echo -e "@ build/governor-$(VERSION)-windows-amd64.exe\n@=governor.exe"  | zipnote -w release/governor-$(VERSION)-windows-amd64.zip
+	GOOS=windows ARCH=amd64 godep go build -a -tags netgo -installsuffix cgo -ldflags "-w -X main.Version $(VERSION)" -o build/pgskail-$(VERSION)-windows-amd64.exe
+	zip release/pgskail-$(VERSION)-windows-amd64.zip build/pgskail-$(VERSION)-windows-amd64.exe README.md LICENSE && \
+		echo -e "@ build/pgskail-$(VERSION)-windows-amd64.exe\n@=pgskail.exe"  | zipnote -w release/pgskail-$(VERSION)-windows-amd64.zip
 	go get github.com/progrium/gh-release/...
 	gh-release create pires/$(NAME) $(VERSION) \
 		$(shell git rev-parse --abbrev-ref HEAD) $(VERSION)

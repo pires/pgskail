@@ -1,14 +1,14 @@
-package main
+package governor
 
 import (
-	"flag"
 	"net"
 	"strconv"
-	"time"
 
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/golang/glog"
-	//	"github.com/jackc/pgx"
+
+	"github.com/pires/pgskail/service"
+	"github.com/pires/pgskail/util"
 )
 
 const (
@@ -17,36 +17,12 @@ const (
 	KEY_LEADER       = "leader"
 )
 
-type Options struct {
-	CleanKeystore  bool
-	EtcdHost       string
-	HealthCheckTTL uint64
-	PgHost         string
-	PgPort         int
-	Electable      bool
-}
-
 var (
-	options  = &Options{}
+	options  service.Options
 	client   *etcd.Client
 	pgServer string
 	amLeader bool = false
 )
-
-func initializeFlags() {
-	flag.Set("logtostderr", "true")
-	flag.BoolVar(&options.CleanKeystore, "clean", false, "Clean-up keystore and start over?")
-	flag.StringVar(&options.EtcdHost, "etcd_host", "127.0.0.1", "Hostname or IP address where Etcd is listening on")
-	flag.Uint64Var(&options.HealthCheckTTL, "ttl", 10, "Health-check interval in seconds")
-	flag.StringVar(&options.PgHost, "pg_host", "127.0.0.1", "Hostname or IP address where PostgreSQL server is listening on")
-	flag.IntVar(&options.PgPort, "pg_port", 5432, "TCP port where PostgreSQL server is listening on")
-	flag.BoolVar(&options.Electable, "electable", true, "Is leader electable?")
-	flag.Parse()
-}
-
-func GetOptions() Options {
-	return *options
-}
 
 /**
  * Governor function responsible for handling failover
@@ -84,11 +60,11 @@ func govern() {
 	}
 }
 
-func main() {
-	initializeFlags()
+func Run(_options service.Options) chan struct{} {
+  options = _options
 	defer glog.Flush()
 
-	glog.Info("pgskail governor")
+	glog.Info("Running governor")
 
 	// validate PostgreSQL
 	if options.PgPort < 1025 || options.PgPort > 65535 {
@@ -126,10 +102,9 @@ func main() {
 	// govern once right now
 	govern()
 	// schedule future govern executions
-	stop := schedule(govern, options.HealthCheckTTL)
-	defer close(stop)
+	stop := util.Schedule(govern, options.HealthCheckTTL)
 
-	select {}
+	return stop
 }
 
 /**
@@ -138,26 +113,4 @@ func main() {
 func getErrorCode(err error) int {
 	etcdErr, _ := err.(*etcd.EtcdError)
 	return etcdErr.ErrorCode
-}
-
-/**
- * Schedule a function to run every _interval_ seconds
- */
-func schedule(what func(), interval uint64) chan struct{} {
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
-	stop := make(chan struct{})
-
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				what()
-			case <-stop:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-
-	return stop
 }

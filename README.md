@@ -34,10 +34,10 @@ docker run -d --net host -e ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379 quay.io/
 docker run -d --net host --name postgres -e POSTGRES_PASSWORD=teste postgres
 ``
 
-Now, you can run `governor` like  
+Now, you can run `pgskail` like  
 
 ```
-./build/governor --etcd_server 192.168.59.104 --pg_server 192.168.59.104
+./build/pgskail --etcd_host 192.168.59.104 --pg_host 192.168.59.104
 ``
 
 ## Flags
