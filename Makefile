@@ -2,9 +2,8 @@ NAME=pgskail
 VERSION=$(shell cat VERSION)
 
 local:
-	godep go build -a -ldflags "-w -X main.Version $(VERSION)-dev" -o build/pgskail
-	cp build/pgskail docker/pgskail
-	docker build -t pires/pgskail docker
+	godep go build -a -ldflags "-w -X main.Version $(VERSION)-dev" -o build/pgskail.mac
+	GOOS=linux ARCH=amd64 godep go build -a -ldflags "-w -X main.Version $(VERSION)-dev" -o build/pgskail.linux
 
 release:
 	rm -rf build release && mkdir build release
