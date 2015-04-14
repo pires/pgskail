@@ -15,6 +15,7 @@ const (
 	ETCD_PREFIX      = "pgskail"
 	ETCD_TTL_FOREVER = 0
 	KEY_LEADER       = "leader"
+	KEY_MEMBER_DIR   = "members"
 )
 
 var (
@@ -69,14 +70,15 @@ func Run(_options service.Options) chan struct{} {
 		log.Fatal("Bad --pg_port value: ", options.PgPort)
 	}
 	pgServer = options.PgHost + ":" + strconv.Itoa(options.PgPort)
-	log.Println("Connecting to PostgreSQL at ", pgServer, "...")
+	log.Println("Connecting to PostgreSQL at", pgServer, "...")
 	if _, err := net.Dial("tcp", pgServer); err != nil {
 		log.Fatal("There was an error while connecting to PostgreSQL -> ", err)
 	}
 
 	// validate Etcd
+	// TODO retry connection to etcd a pre-defined number of times before failing
 	etcdServer := options.EtcdHost + ":2379"
-	log.Println("Connecting to Etcd at ", etcdServer, "...")
+	log.Println("Connecting to Etcd at", etcdServer, "...")
 	machines := []string{"http://" + etcdServer}
 	client = etcd.NewClient(machines)
 	if _, err := net.Dial("tcp", etcdServer); err != nil {
