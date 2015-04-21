@@ -1,6 +1,8 @@
 package util
 
 import (
+	"io/ioutil"
+	"strings"
 	"time"
 )
 
@@ -24,4 +26,17 @@ func Schedule(what func(), interval uint64) chan struct{} {
 	}()
 
 	return stop
+}
+
+func IsDirEmpty(path string) (bool, error) {
+	files, err := ioutil.ReadDir(path)
+	return len(files) == 0, err
+}
+
+func MakePath(nodes []string) string {
+	path := "/"
+	if len(nodes) > 0 {
+		path = path + strings.Join(nodes, "/")
+	}
+	return path
 }

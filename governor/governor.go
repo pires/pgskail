@@ -4,55 +4,54 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/coreos/go-etcd/etcd"
 
+	"github.com/pires/pgskail/keystore"
 	"github.com/pires/pgskail/service"
 	"github.com/pires/pgskail/util"
 )
 
-const (
-	ETCD_PREFIX      = "pgskail"
-	ETCD_TTL_FOREVER = 0
-	KEY_LEADER       = "leader"
-	KEY_MEMBER_DIR   = "members"
-)
+const ()
 
 var (
 	options  service.Options
-	client   *etcd.Client
-	pgServer string
+	member   keystore.Member
 	amLeader bool = false
 )
+
+// TODO schedule member ttl updates
 
 /**
  * Governor function responsible for handling failover
  */
 func govern() {
 	// get current leader
-	if leaderResponse, _ := client.Get(KEY_LEADER, false, false); leaderResponse == nil {
+	if leader, _ := keystore.GetLeader(); leader == nil {
 		// no leader. run for it?
-		if options.Electable {
+		if options.MemberElectable {
 			log.Println("No leader was found. Running for leader...")
 			// some competitor may have won already, so fail if it is so
-			if _, err := client.Create(KEY_LEADER, pgServer, options.HealthCheckTTL+5); err == nil {
+			if err := keystore.SetLeader(member, options.LeaderTTL+5, false); err == nil {
 				amLeader = true
 				log.Println("Won leader race")
 			} else {
 				log.Println("Lost leader race")
 				// look again for the leader
-				govern()
 			}
 		} else {
-			log.Println("No leader was found. Retrying in", options.HealthCheckTTL)
+			log.Println("No leader was found. Retrying in", options.LeaderTTL)
 		}
 	} else {
-		if leader := leaderResponse.Node.Value; leader == pgServer {
-			client.Update(KEY_LEADER, pgServer, options.HealthCheckTTL+5)
-			// log only if we
-			amPromoted := !amLeader && true
-			if amLeader = true; amPromoted {
-				log.Println("I'm leader")
+		if leader.URL == member.URL {
+			if err := keystore.SetLeader(member, options.LeaderTTL+5, true); err == nil {
+				amPromoted := !amLeader && true
+				if amLeader = true; amPromoted {
+					log.Println("I'm leader")
+				}
+			} else {
+				log.Fatal("Failed to update leader status", err)
 			}
 		} else {
 			amLeader = false
@@ -69,7 +68,7 @@ func Run(_options service.Options) chan struct{} {
 	if options.PgPort < 1025 || options.PgPort > 65535 {
 		log.Fatal("Bad --pg_port value: ", options.PgPort)
 	}
-	pgServer = options.PgHost + ":" + strconv.Itoa(options.PgPort)
+	pgServer := options.PgHost + ":" + strconv.Itoa(options.PgPort)
 	log.Println("Connecting to PostgreSQL at", pgServer, "...")
 	if _, err := net.Dial("tcp", pgServer); err != nil {
 		log.Fatal("There was an error while connecting to PostgreSQL -> ", err)
@@ -79,28 +78,29 @@ func Run(_options service.Options) chan struct{} {
 	// TODO retry connection to etcd a pre-defined number of times before failing
 	etcdServer := options.EtcdHost + ":2379"
 	log.Println("Connecting to Etcd at", etcdServer, "...")
-	machines := []string{"http://" + etcdServer}
-	client = etcd.NewClient(machines)
-	if _, err := net.Dial("tcp", etcdServer); err != nil {
+	if err := keystore.Connect(etcdServer); err != nil {
 		log.Fatal("There was an error while connecting to Etcd -> ", err)
 	}
 
 	// need to clean-up?
 	if options.CleanKeystore {
 		log.Println("Cleaning-up keystore...")
-		// clean-up directory
-		client.Delete(ETCD_PREFIX, true)
-		// create directory
-		if _, err := client.CreateDir(ETCD_PREFIX, ETCD_TTL_FOREVER); err != nil {
-			log.Fatal("There was an error while creating", ETCD_PREFIX, " directory in etcd. Code:", getErrorCode(err))
+		if err := keystore.Initialize(); err != nil {
+			log.Fatal("There was an error while initializing keystore, code:", getErrorCode(err))
 		}
 		log.Println("Keystore cleaned-up")
 	}
 
+	// register as member
+	url := "postgresql://" + pgServer // TODO add authentication support
+	member = keystore.Member{Name: options.PgHost, URL: url, TTL: options.MemberTTL, LastCheck: uint64(time.Now().UnixNano() / 1000000)}
+	if registered := member.Register(); !registered {
+		log.Fatal("Couldn't register as a member")
+	}
 	// govern once right now
 	govern()
 	// schedule future govern executions
-	stop := util.Schedule(govern, options.HealthCheckTTL)
+	stop := util.Schedule(govern, options.LeaderTTL)
 
 	return stop
 }
